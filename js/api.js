@@ -40,5 +40,9 @@ const FinanceAPI = (() => {
     return data;
   }
 
-  return { getCached: getCached, getCacheMeta: getCacheMeta, setCached: setCached, fetchLive: fetchLive };
+  function clearCache() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  }
+
+  return { getCached: getCached, getCacheMeta: getCacheMeta, setCached: setCached, fetchLive: fetchLive, clearCache: clearCache };
 })();

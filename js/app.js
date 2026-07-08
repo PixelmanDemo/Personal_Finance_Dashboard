@@ -115,6 +115,13 @@
   function bindEvents() {
     dom.syncBtn.addEventListener('click', function () {
       dom.syncBtn.classList.add('sync-spinning');
+      FinanceAPI.clearCache();
+      fallbackEmpty();
+      dom.expensesList.innerHTML = '';
+      dom.simNetBalance.textContent = '\u2014';
+      dom.simAmexLine.classList.add('hidden');
+      dom.simVerdict.textContent = '';
+      dom.simVerdict.className = 'simulator-verdict';
       setStatus('Refreshing data\u2026');
       FinanceAPI.fetchLive()
         .then(function (data) {
