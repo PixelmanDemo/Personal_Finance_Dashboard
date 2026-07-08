@@ -1,29 +1,44 @@
 const FinanceAPI = (() => {
   const STORAGE_KEY = 'financeDashboardData';
   const API_URL = 'https://script.google.com/macros/s/AKfycbzCMODsiA9V_uHwpKX8JhnJl3LpmXNU3g1XfnXnuEnIRFSLY_BlfjyIkJQnKr4WXBbT/exec';
+  const FRESH_MS = 60000;
 
-  function getCached() {
+  function getRaw() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      var raw = localStorage.getItem(STORAGE_KEY);
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
     }
   }
 
+  function getCached() {
+    var wrapper = getRaw();
+    return wrapper ? wrapper.data : null;
+  }
+
+  function getCacheMeta() {
+    var wrapper = getRaw();
+    return wrapper ? { fetchedAt: wrapper.fetchedAt } : null;
+  }
+
   function setCached(data) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: data, fetchedAt: Date.now() }));
     } catch {}
   }
 
   async function fetchLive() {
-    const res = await fetch(API_URL);
+    var wrapper = getRaw();
+    if (wrapper && Date.now() - wrapper.fetchedAt < FRESH_MS) {
+      return wrapper.data;
+    }
+    var res = await fetch(API_URL);
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
+    var data = await res.json();
     setCached(data);
     return data;
   }
 
-  return { getCached, setCached, fetchLive };
+  return { getCached: getCached, getCacheMeta: getCacheMeta, setCached: setCached, fetchLive: fetchLive };
 })();

@@ -13,11 +13,13 @@
 
   var dom = {};
   var latestData = null;
+  var lastFetchedAt = null;
 
   function init() {
     dom.dateDisplay = document.getElementById('dateDisplay');
     dom.calendarProgress = document.getElementById('calendarProgress');
     dom.syncBtn = document.getElementById('syncBtn');
+    dom.syncStatus = document.getElementById('syncStatus');
     dom.threeContainer = document.getElementById('three-container');
     dom.expensesList = document.getElementById('expenses-list');
     dom.footerTimestamp = document.getElementById('footerTimestamp');
@@ -43,6 +45,13 @@
     };
 
     updateDateDisplay();
+
+    var meta = FinanceAPI.getCacheMeta();
+    if (meta) {
+      lastFetchedAt = meta.fetchedAt;
+      updateFooterTimestamp();
+    }
+
     bindEvents();
 
     try {
@@ -54,10 +63,17 @@
     // Instant render from cache, then refresh from network
     var cached = FinanceAPI.getCached();
     if (cached) renderDashboard(cached);
+
+    setStatus('Refreshing data\u2026');
     FinanceAPI.fetchLive()
-      .then(renderDashboard)
+      .then(function (data) {
+        clearStatus();
+        renderDashboard(data);
+      })
       .catch(function () {
         if (!cached) fallbackEmpty();
+        setStatus('Unable to reach Google, showing cached data');
+        setTimeout(clearStatus, 5000);
       });
 
     // Debounced resize
@@ -78,12 +94,37 @@
     dom.calendarProgress.style.width = (today / daysInMonth * 100) + '%';
   }
 
+  function setStatus(msg) {
+    if (!dom.syncStatus) return;
+    dom.syncStatus.textContent = msg;
+    dom.syncStatus.classList.remove('hidden');
+  }
+
+  function clearStatus() {
+    if (!dom.syncStatus) return;
+    dom.syncStatus.textContent = '';
+    dom.syncStatus.classList.add('hidden');
+  }
+
+  function updateFooterTimestamp() {
+    if (lastFetchedAt) {
+      dom.footerTimestamp.textContent = 'Last updated: ' + new Date(lastFetchedAt).toLocaleString('en-GB');
+    }
+  }
+
   function bindEvents() {
     dom.syncBtn.addEventListener('click', function () {
       dom.syncBtn.classList.add('sync-spinning');
+      setStatus('Refreshing data\u2026');
       FinanceAPI.fetchLive()
-        .then(function (data) { renderDashboard(data); })
-        .catch(function () {})
+        .then(function (data) {
+          clearStatus();
+          renderDashboard(data);
+        })
+        .catch(function () {
+          setStatus('Unable to reach Google, showing cached data');
+          setTimeout(clearStatus, 5000);
+        })
         .finally(function () { dom.syncBtn.classList.remove('sync-spinning'); });
     });
 
@@ -135,7 +176,8 @@
 
     renderExpenses(data.expenses || []);
 
-    dom.footerTimestamp.textContent = 'Last updated: ' + new Date().toLocaleString('en-GB');
+    lastFetchedAt = Date.now();
+    updateFooterTimestamp();
     latestData = data;
   }
 
