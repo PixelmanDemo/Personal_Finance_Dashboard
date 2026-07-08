@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finance Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+<body class="bg-[#080b10] text-gray-100 min-h-screen font-sans antialiased">
+  <header class="border-b border-gray-800/60 px-4 sm:px-6 lg:px-8 py-4">
+    <div class="max-w-7xl mx-auto">
+      <div class="flex items-center justify-between">
+        <h1 class="text-lg sm:text-xl font-semibold tracking-wide text-white/90">
+          <span class="text-indigo-400">&#9670;</span> Jamal & Jess' Finances
+        </h1>
+        <div class="flex items-center gap-4">
+          <div class="text-right">
+            <div id="dateDisplay" class="text-sm text-gray-400 font-mono"></div>
+            <div class="w-full bg-gray-800/60 rounded-full h-0.5 mt-1 min-w-[100px]">
+              <div id="calendarProgress" class="h-0.5 rounded-full transition-all duration-700 ease-out" style="width:0%;background:linear-gradient(90deg,#6366f1,#818cf8);"></div>
+            </div>
+          </div>
+          <button id="syncBtn" class="p-2 rounded-lg bg-gray-800/50 border border-gray-700/50 hover:bg-gray-700/50 hover:border-indigo-500/30 transition-all duration-300 text-gray-400 hover:text-indigo-300" title="Sync System">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav class="flex gap-1 py-4 border-b border-gray-800/40">
+      <button class="tab-btn active px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300" data-tab="balances">Balances</button>
+      <button class="tab-btn px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300" data-tab="pipeline">Bills &amp; Outgoings</button>
+      <button class="tab-btn px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300" data-tab="simulator">Simulator</button>
+    </nav>
+
+    <div id="three-container" class="w-full mt-4 rounded-2xl overflow-hidden" style="aspect-ratio:21/9;min-height:200px;max-height:400px;"></div>
+
+    <section id="tab-balances" class="tab-panel active mt-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="metric-card" style="--glow-color:rgba(255,255,255,0.15);">
+          <div class="metric-label">Current Account Balance</div>
+          <div class="metric-value" id="val-currentBalance">&mdash;</div>
+        </div>
+        <div class="metric-card" style="border-color:rgba(5,46,22,0.4);--glow-color:#34d399;">
+          <div class="metric-label">Savings</div>
+          <div class="metric-value" id="val-savingsBalance" style="color:#34d399;">&mdash;</div>
+        </div>
+        <div class="metric-card" style="border-color:rgba(76,5,25,0.4);">
+          <div class="metric-label">Current AMEX Balance</div>
+          <div class="metric-value" id="val-currentAmexBalance">&mdash;</div>
+          <div id="amex-warning" class="hidden mt-1.5 text-xs text-rose-400 font-semibold flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>
+            <span>WARNING</span>
+          </div>
+        </div>
+        <div class="metric-card" style="border-color:rgba(75,85,99,0.3);--glow-color:#9ca3af;">
+          <div class="metric-label">Total Outgoings This Month</div>
+          <div class="metric-value" id="val-totalOutgoings" style="color:#9ca3af;">&mdash;</div>
+        </div>
+        <div class="metric-card" style="border-color:rgba(217,119,6,0.3);--glow-color:#f59e0b;">
+          <div class="metric-label">Remaining Outgoings</div>
+          <div class="metric-value" id="val-remainingOutgoings" style="color:#f59e0b;">&mdash;</div>
+        </div>
+        <div class="metric-card" style="border-color:#6366f1;">
+          <div class="metric-label">Cash Left After all Expenses</div>
+          <div class="metric-value" id="val-balanceAfterExpenses">&mdash;</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-simulator" class="tab-panel mt-6 hidden">
+      <div class="simulator-card">
+        <div class="simulator-title">SYSTEM TRANSACTION SIMULATOR</div>
+        <div class="simulator-input-row">
+          <div class="simulator-field">
+            <label for="sim-cost">Purchase Cost (&pound;)</label>
+            <input type="number" id="sim-cost" placeholder="0.00" step="0.01" min="0">
+          </div>
+          <div class="toggle-wrapper">
+            <label>Deduct From Remaining AMEX Limit?</label>
+            <button id="sim-amex-toggle" class="toggle-btn off" type="button">
+              <span class="toggle-knob"></span>
+              <span class="toggle-label">OFF</span>
+            </button>
+          </div>
+        </div>
+        <div class="simulator-results">
+          <div class="result-line">
+            <span>Net Remaining Safe-to-Spend</span>
+            <span class="result-value" id="sim-net-balance">&mdash;</span>
+          </div>
+          <div id="sim-amex-line" class="result-line hidden">
+            <span>Simulated Amex Balance</span>
+            <span class="result-value" id="sim-amex-result"></span>
+          </div>
+        </div>
+        <div id="sim-verdict" class="simulator-verdict"></div>
+      </div>
+    </section>
+
+    <section id="tab-pipeline" class="tab-panel mt-6 hidden">
+      <h2 class="text-sm font-medium text-gray-400 uppercase tracking-wider mb-4">Scheduled Outgoings</h2>
+      <div id="expenses-list" class="space-y-2"></div>
+    </section>
+  </div>
+
+  <footer class="text-center py-6 text-xs text-gray-700">
+    <span id="footerTimestamp"></span>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/three-scene.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
